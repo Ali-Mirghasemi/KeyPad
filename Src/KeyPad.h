@@ -120,10 +120,10 @@ typedef struct {
  * (Presed)  <-|____(Hold)____|-> (Released)
  */
 typedef enum {
-    KeyPad_State_None          = 0x00,
-    KeyPad_State_Pressed       = 0x01,
-    KeyPad_State_Hold          = 0x02,
-    KeyPad_State_Released      = 0x03,
+    KeyPad_State_Pressed       = 0x00,
+    KeyPad_State_Hold          = 0x01,
+    KeyPad_State_Released      = 0x02,
+    KeyPad_State_None          = 0x03,
 } KeyPad_State;
 
 /**
@@ -160,7 +160,7 @@ typedef struct {
     const KeyPad_KeyValue*      Map;
     const KeyPad_PinConfig*     Columns;
     const KeyPad_PinConfig*     Rows;
-    KeyPad_LenType              RowLen;
+    KeyPad_LenType              RowsLen;
     KeyPad_LenType              ColumnsLen;
 } KeyPad_Config;
 
@@ -225,12 +225,12 @@ typedef struct {
 #endif
 
 typedef union {
-    KeyPad_Callback            callbacks[KEYPAD_CALLBACKS_NUM];
+    KeyPad_Callback            fn[KEYPAD_CALLBACKS_NUM];
     struct {
     #if KEYPAD_MULTI_CALLBACK
+        KeyPad_Callback        onPressed;  
         KeyPad_Callback        onHold;
-        KeyPad_Callback        onReleased;
-        KeyPad_Callback        onPressed;
+        KeyPad_Callback        onReleased;        
     #if KEYPAD_NONE_CALLBACK
         KeyPad_Callback        onNone;
     #endif // KEYPAD_NONE_CALLBACK
@@ -252,7 +252,7 @@ struct _KeyPad {
     void*                       Args;                       /**< hold user arguments */
 #endif
     const KeyPad_Config*        Config;                 	/**< hold pointer to keypad configuration */
-    KeyPad_Callbacks            Callbacks;                  /**< hold user separate callbacks for each keypad state */
+    KeyPad_Callbacks            Callbacks;                /**< hold user separate callbacks for each keypad state */
     KeyPad_LenType              RowIndex;                   /**< hold current row index */
     KeyPad_LenType              ColIndex;                   /**< hold current col index */
     uint8_t                     State           : 2;    	/**< show current state of keypad*/
