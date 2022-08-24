@@ -160,8 +160,8 @@ typedef struct {
     const KeyPad_KeyValue*      Map;
     const KeyPad_PinConfig*     Columns;
     const KeyPad_PinConfig*     Rows;
-    KeyPad_LenType              RowsLen;
     KeyPad_LenType              ColumnsLen;
+    KeyPad_LenType              RowsLen;
 } KeyPad_Config;
 
 #define KEYPAD_CONFIG_INIT(MAP, COL, ROW)       {MAP, COL, ROW, sizeof(COL)/sizeof(KeyPad_PinConfig), sizeof(ROW)/sizeof(KeyPad_PinConfig)}

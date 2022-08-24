@@ -20,26 +20,25 @@ static const KeyPad_Driver* keypadDriver;
     #define __activeState(K)            KeyPad_ActiveState_Low
 #endif
 
-#if KEYPAD_MODE == KEYPAD_MODE_ROW_INPUT
-    #define __inPinMode(K)              ((KeyPad_PinMode) __activeState(K))
-    #define __outPinMode(K)             KeyPad_PinMode_Output
+#define __inPinMode(K)                  ((KeyPad_PinMode) __activeState(K))
+#define __outPinMode(K)                 KeyPad_PinMode_Output
+
+#if KEYPAD_MODE == KEYPAD_MODE_ROW_INPUT    
     #define __outNum(K)                 (K)->Config->ColumnsLen
     #define __inNum(K)                  (K)->Config->RowsLen
     #define __outPin(K,I)               (K)->Config->Columns[I]
     #define __inPin(K,I)                (K)->Config->Rows[I]
-    #define __value(K, OUT, IN)         *((K)->Config->Map + (OUT * (K)->Config->ColumnsLen) + (IN))
+    #define __value(K, OUT, IN)         *((K)->Config->Map + (IN * (K)->Config->ColumnsLen) + (OUT))
     #define __setOutIndex(K, IDX)       (K)->ColIndex = (IDX)
     #define __setInIndex(K, IDX)        (K)->RowIndex = (IDX)
     #define __getOutIndex(K)            (K)->ColIndex
     #define __getInIndex(K)             (K)->RowIndex
 #else
-    #define __inPinMode(K)              KeyPad_PinMode_Output
-    #define __outPinMode(K)             ((KeyPad_PinMode) __activeState(K))
     #define __outNum(K)                 (K)->Config->RowsLen
     #define __inNum(K)                  (K)->Config->ColumnsLen
     #define __outPin(K,I)               (K)->Config->Rows[I]
     #define __inPin(K,I)                (K)->Config->Columns[I]
-    #define __value(K, OUT, IN)         *((K)->Config->Map + (IN * (K)->Config->ColumnsLen) + (OUT))
+    #define __value(K, OUT, IN)         *((K)->Config->Map + (OUT * (K)->Config->ColumnsLen) + (IN))
     #define __setOutIndex(K, IDX)       (K)->RowIndex = (IDX)
     #define __setInIndex(K, IDX)        (K)->ColIndex = (IDX)
     #define __getOutIndex(K)            (K)->RowIndex
@@ -64,7 +63,7 @@ static const KeyPad_Driver* keypadDriver;
 
 static void KeyPad_initOut(KeyPad* keypad);
 static void KeyPad_initIn(KeyPad* keypad);
-
+static void KeyPad_scanKeys(KeyPad* keypad);
 
 /**
  * @brief use for initialize
@@ -79,8 +78,6 @@ void KeyPad_init(const KeyPad_Driver* driver) {
  * all of callbacks handle and fire in this function
  */
 void KeyPad_handle(void) {
-    KeyPad_LenType outIndex;
-    KeyPad_LenType inIndex;
     KeyPad* pKeyPad = __keypads();
 
 #if KEYPAD_MAX_NUM == -1
@@ -96,23 +93,7 @@ void KeyPad_handle(void) {
 
         if (pKeyPad->State == KeyPad_State_None) {
             // scan all keys
-            uint8_t state = __activeState(keypad);
-            for (outIndex = 0; outIndex < __outNum(pKeyPad); outIndex++) {
-                keypadDriver->writePin(&__outPin(pKeyPad, outIndex), state);
-                for (inIndex = 0; inIndex < __inNum(pKeyPad); inIndex++) {
-                    if (keypadDriver->readPin(&__inPin(pKeyPad, inIndex)) == state) {
-                        // key pressed
-                        pKeyPad->State = KeyPad_State_Pressed;
-                        __setOutIndex(pKeyPad, outIndex);
-                        __setInIndex(pKeyPad, inIndex);
-                        __fireCallback(pKeyPad, __value(pKeyPad, outIndex, inIndex));
-                        break;
-                    }
-                }
-                keypadDriver->writePin(&__outPin(pKeyPad, outIndex), !state);
-            }
-            // fire callback if state is none
-            __fireNoneCallback(keypad);
+            KeyPad_scanKeys(pKeyPad);
         }
         else {
             // scan only pressed key
@@ -363,5 +344,29 @@ static void KeyPad_initIn(KeyPad* keypad) {
     while (len-- > 0) {
         keypadDriver->initPin(config++, mode);
     }
+}
+/**
+ * @brief scan all keys for found a pressed key
+ */
+static void KeyPad_scanKeys(KeyPad* keypad) {
+    KeyPad_LenType outIndex;
+    KeyPad_LenType inIndex;
+    uint8_t state = __activeState(keypad);
+    for (outIndex = 0; outIndex < __outNum(keypad); outIndex++) {
+        keypadDriver->writePin(&__outPin(keypad, outIndex), state);
+        for (inIndex = 0; inIndex < __inNum(keypad); inIndex++) {
+            if (keypadDriver->readPin(&__inPin(keypad, inIndex)) == state) {
+                // key pressed
+                keypad->State = KeyPad_State_Pressed;
+                __setOutIndex(keypad, outIndex);
+                __setInIndex(keypad, inIndex);
+                __fireCallback(keypad, __value(keypad, outIndex, inIndex));
+                return;
+            }
+        }
+        keypadDriver->writePin(&__outPin(keypad, outIndex), !state);
+    }
+    // fire callback if state is none
+    __fireNoneCallback(keypad);
 }
 
