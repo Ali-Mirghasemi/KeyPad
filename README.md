@@ -59,11 +59,11 @@ user must define deinitPin function in Key_Driver
 #### KEYPAD_CONFIG_IO
 if Key is based on pair of GPIO and Pin num must enable it for arduino must disable it
 
-#### KeyPad_IO
+#### KEYPAD_IO
 hold key io
 user can change it to GPIO_TypeDef or anything else that system want
 
-#### KeyPad_Pin
+#### KEYPAD_PIN
 hold key pin num or pin bit
 user can change it to uint8_t for 8-bit systems like AVR
 
